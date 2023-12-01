@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+</head>
+
+<body>
+
+  <!-- <audio src="test.mp3" controls></audio> -->
+
+  <script>
+    function splitAudio(myAudio) {
+      const context = new AudioContext();
+      const audioSource = context.createMediaElementSource(myAudio)
+
+      // split the stereo channel
+      const splitter = context.createChannelSplitter(2);
+      // make a mono destination
+      const merger = context.createChannelMerger(1);
+      // connect the merger to the destination now.
+      merger.connect(context.destination);
+
+      // Gain node to control the volume of each channel.
+      const channelL = context.createGain();
+      const channelR = context.createGain();
+
+      audioSource.connect(splitter);
+
+      // audioSource is split into its separate channels.  For each channel connect
+      // a different gain node so we can control the volume independently.
+      splitter.connect(channelL, 0, 0);
+      splitter.connect(channelR, 1, 0);
+
+      // Combine the output of each gain node back into one stream using the merger.
+      channelL.connect(merger, 0, 0);
+      channelR.connect(merger, 0, 0);
+
+      return {
+        left: channelL,
+        right: channelR
+      }
+    }
+
+
+    function attachGain(inputRangeEl, callback) {
+      inputRangeEl.addEventListener('input', function () {
+        callback(this.value / 100)
+      }, false);
+    }
+
+    function createSlider() {
+      let a = document.createElement("input")
+      a.type = "range"
+      a.min = 0
+      a.max = 100
+
+      document.body.appendChild(a)
+      return a
+    }
+
+    const channels = splitAudio(document.getElementsByTagName("audio")[0])
+
+    attachGain(createSlider(), (x) => {
+      channels.left.gain.value = x;
+    })
+
+    attachGain(createSlider(), (x) => {
+      channels.right.gain.value = x;
+    })
+  </script>
+
+</body>
+
+</html>
